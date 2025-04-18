@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  password     String
+  role         UserRole     @default(INNOVATOR)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  pitches      Pitch[]      @relation("PitchCreator")
+  investments  Investment[]
+  kycStatus    KYCStatus    @default(PENDING)
+  kycDocuments String // JSON string of document URLs
+  badge        Badge?       @relation(fields: [badgeId], references: [id])
+  badgeId      String?
+}
+
+model Pitch {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  videoUrl    String
+  status      PitchStatus  @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  creator     User         @relation("PitchCreator", fields: [creatorId], references: [id])
+  creatorId   String
+  investments Investment[]
+  questions   Question[]
+  aiScore     Float?
+}
+
+model Investment {
+  id         String           @id @default(cuid())
+  amount     Float
+  status     InvestmentStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  investor   User             @relation(fields: [investorId], references: [id])
+  investorId String
+  pitch      Pitch            @relation(fields: [pitchId], references: [id])
+  pitchId    String
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  content   String
+  answer    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  pitch     Pitch    @relation(fields: [pitchId], references: [id])
+  pitchId   String
+}
+
+model Badge {
+  id          String @id @default(cuid())
+  name        String
+  description String
+  imageUrl    String
+  users       User[]
+}
+
+enum UserRole {
+  ADMIN
+  INVESTOR
+  INNOVATOR
+}
+
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PitchStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FUNDED
+}
+
+enum InvestmentStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
